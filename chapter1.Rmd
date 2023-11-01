@@ -1,4 +1,3 @@
-
 # About the project
 
 *Write a short description about the course and add a link to your GitHub repository here. This is an R Markdown (.Rmd) file so you should use R Markdown syntax.*
@@ -9,5 +8,19 @@
 date()
 
 ```
-The text continues here.
 
+-   **-Feelings about the Course**
+
+    I heard about the course from my friends, who is also a PhD student. I feel like it would be great to master R skills to do research. I totally have no idea what to do at the beginning since I had no experience in using R or RStudio experience before. Surprisingly that every step, from installment of software to create personal GitHub repository, was pretty detailed and easy to follow. What I expect to learn from this course is to use R tools to analyse data.
+
+-   **-Week1 Learning Experience**
+
+    Generally I can understand the code introduced this week, but it is not that easy to remember all the codes since I am not that familiar with the R language. One thing I found was that when I saw the code I know the function, but when I wrote the code by myself, I still need to go back and check out the name of functions. I guess I need more practice. I really love the part which introduced how to plot graphs. It is not that difficult, it would be better if there are more separate excercise.
+
+-   **My GitHub repository**
+
+    <https://github.com/DongyangDongyang/IODS-project>
+
+-   **My Course Diary**
+
+    <https://DongyangDongyang.github.io/IODS-project/>
