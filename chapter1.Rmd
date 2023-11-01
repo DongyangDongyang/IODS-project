@@ -21,6 +21,3 @@ date()
 
     <https://github.com/DongyangDongyang/IODS-project>
 
--   **My Course Diary**
-
-    <https://DongyangDongyang.github.io/IODS-project/>
