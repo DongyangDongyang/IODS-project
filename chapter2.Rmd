@@ -1,13 +1,153 @@
-# Insert chapter 2 title here
+---
+---
+---
+
+# 2: Regression and model validation
 
 *Describe the work you have done this week and summarize your learning.*
 
-- Describe your work and results clearly. 
-- Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
-- Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+-   Describe your work and results clearly.
+-   Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
+-   Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
 
 ```{r}
 date()
+
+## read students2014 data
+learning2014 <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/learning2014.txt", header = TRUE, sep = ",")
+
+
+## the structure of data
+struc <- str(learning2014)
+
+
+## the dimensions of data
+dimensions <- dim(learning2014)
+dimensions
+
+
+## display summary of the dataset
+s <- summary(learning2014)
+s
+
+
+# 2.7 Visualizations with ggplot2
+# Access the gglot2 library
+library(ggplot2)
+# initialize plot with data and aesthetic mapping
+p1 <- ggplot(learning2014, aes(x = attitude, y = points, col = gender))
+# define the visualization type (points)
+p2 <- p1 + geom_point()
+# draw the plot
+p2
+# add a regression line
+p3 <- p2 + geom_smooth(method = "lm")
+# add a main title
+p4 <- p3 + ggtitle("Student's attitude versus exam points")
+# draw the plot!
+p4
+
+
+## 2.8 Exploring a data frame
+# draw a scatter plot matrix of the variables in learning2014.
+# [-1] excludes the first column (gender)
+pairs(learning2014[-1])
+# access the GGally and ggplot2 libraries
+library(GGally)
+library(ggplot2)
+# create a more advanced plot matrix with ggpairs()
+p <- ggpairs(learning2014, 
+             mapping = aes(col = gender, alpha = 0.3), 
+             lower = list(combo = wrap("facethist", bins = 20)))
+# draw the plot
+p
+
+
+## 2.9 Simple regression
+# a scatter plot of points versus attitude
+library(ggplot2)
+qplot(attitude, points, data = learning2014) + geom_smooth(method = "lm")
+# fit a linear model
+my_model <- lm(points ~ attitude, data = learning2014)
+# print out a summary of the model
+summary(my_model)
+
+
+## 2.10 Multiple regression
+library(GGally)
+library(ggplot2)
+# create an plot matrix with ggpairs()
+ggpairs(learning2014, lower = list(combo = wrap("facethist", bins = 20)))
+# create a regression model with multiple explanatory variables
+my_model2 <- lm(points ~ attitude + stra + surf, data = learning2014)
+# print out a summary of the model
+summary(my_model2)
+
+# delete one unrelevant variable
+my_model3 <- lm(points ~ attitude + stra, data = learning2014)
+#summary of the model
+summary(my_model3)
+
+
+## 2.11 Graphical model validation
+# create a regression model with multiple explanatory variables
+my_model3 <- lm(points ~ attitude + stra, data = learning2014)
+# place graphics to the same plot
+par(mfrow = c(2,2))
+# draw diagnostic plots using the plot() function. Choose the plots 1, 2 and 5
+plot(my_model3, which = c(1, 2, 5))
+
+
+## 2.12 Making predictions
+# Create model object m
+m <- lm(points ~ attitude, data = learning2014)
+
+# print out a summary of the model
+summary(m)
+
+# New observations
+new_attitudes <- c("Mia" = 3.8, "Mike"= 4.4, "Riikka" = 2.2, "Pekka" = 2.9)
+new_data <- data.frame(attitude = new_attitudes)
+
+# Print out the new data
+str(new_data)
+
+# Predict the new students exam points based on attitude
+predict(m, newdata = new_data)
 ```
 
-Here we go again...
+This week I looked through chapter 7 and completed Exercise2. Exercise 2.1 - 2.6 were for data wrangling, the codes and comments were in IODS-project/data/create_learning2014R. Below are the explanations for the exercises of data analysis.
+
+## The structure and dimensions of the learning2014 data
+
+The dataset has 166 observations and 7 variables. Variables are gender, age, attitude, deep (deep questions), stra (strategic questions), surf (surface questions), and points (total points).
+
+## Summaries of the variables
+
+The summary provides information about the range of values (from minimum to maximum) and indication of the average value (median and mean) except the variable, gender, which is categorical. Quartiles of points suggest that 25% of observations have "points" value of 19 or lower, 50% of observations have "points" values of 23 or lower, 75% of observations have "points" values of 27.75 or lower. The middle 50% of points values fall within a range of 8.75 (27.75-19.00).
+
+## Relationships between points and attitude
+
+A correlation coefficient of 0.437 between "attitude" and "points" suggests a moderate positivie liner relationships between these two variables.
+
+### Summary output for regression of "points" on "attitude"
+
+The Coefficients showed that Intercept = 11.6372, the slope of attitude = 3.5255, the model's equation can be represented as points = 11.6372 + 3.5255 \* attitude. The relatively small interquartile range (1Q to 3Q) suggests that the middle 50% of residual values are relatively concentrated within a small range. This indicates that the distribution of residuals is relatively compact in terms of central tendency. The residual standard error is 5.32. This is a measure of the dispersion of residuals. A smaller residual standard error typically indicates that the model fits the data well because the residuals are relatively close to the fitted values. The relatively large minimum and maximum values of residuals may indicate that the model produces significant prediction errors in some cases. The liner regression model suggest that "attitude" is a statistically significant predictor of "points" (p-value = 4.119e-09 \< 0.01). The model indicates that for each unit increase in "attitude", there is an estimated increase of 3.5255 units in "points". However, the R-squared value (R-squared = 0.1906) is relatively low, indicating that 19.06% of the variance in "points" is explained by "attitude". Further analysis and model improvement may be needed.
+
+## Three variables as explanatory variables and a regression model
+
+"attitude", "stra" and "surf" were chosen as explanatory variables in the regression model where the exam points is the dependent variable since they have highest (absolute) correlation with the target variable (points). Below shows the summary of the fitted model.
+
+### Summary output for regression of "points" on "attitude", "stra" and "surf"
+
+The maximum residual suggests that the model can produce relatively large prediction errors.As a whole, the model is statistically significant based on low p-value(0.00322\<0.01). R-squared suggests that the combination of predictor variables explains about 20.74% fo the variance in the "points". The Adjusted R-squared is 0.1927, indicating that the model might not significantly improve when more explanatory variables are added. For the chosen variabales, "attitude" and "stra" are statistically significant predictors, while "surf" is not since has a higher p-value(0.46563).Although the p-value of "stra" may not be statistically significant in predicting "points" in the model, the interpretation of p-values can depend on the specific context and the significance level chosen.
+
+## Summary of your fitted model, relationship between the chosen explanatory variables and the target variable
+
+### Summary output for regression of "points" on "attitude" and "stra"
+
+The model is statistically significant due to its low p-value(0.00025). Attitude is a statistically significant predictor, while stra is less statistically significant. The relationship between the attitude, stra and points can be represented as "points = 8.9729 + 3.4658 \* attitude + 0.9137 \* stra". This model's Adjusted R-squared 0.1951, and is higher than 0.1856(points \~ attitude). The Adjusted R-squared suggests that additional factors may need to be considered further.
+
+## Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage
+
+The intercept and coefficients describe the linera relationship between dependent variable (student total points) and independent variables (attitude questions and strategic questions).The model indicates that an increase in either attitude or stra is associated with an increase in points. According to Residuals vs Fitted, the distribution of residuals in this plot appears to be quite uniform, indicating the model's predictions are evenly distributed and do not show systematic errors. The points in the Normal Q-Q residuals plot closely follow the y=x line, only slight deviations, suggesting that the residuals are similar to normally distributed. Therefore, the model is appropriate for the data and the assumptions of linear regression are met. There are three points with Cook's Distance in Residuals vs Leverage plot, 145, 35, 71. The leverage value of these points are low. The standardized residual value of 145 and 35 are -3, indicating that these two observations might be outlier. However, since their leverage value are not high, the three individual observations has limited impact on the linear regression model.
