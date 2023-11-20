@@ -28,6 +28,8 @@ dim(student_por)
 library(dplyr)
 
 # give the columns that vary in the two data sets
+math <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/student-mat.csv", sep=";", header=TRUE)
+por <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/student-por.csv", sep=";", header=TRUE)
 free_cols <- c("failures","paid","absences","G1","G2","G3")
 
 # the rest of the columns are common identifiers used for joining the data sets

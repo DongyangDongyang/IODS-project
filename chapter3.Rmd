@@ -116,7 +116,7 @@ CI <- confint(high_use_four) %>% exp
 
 ```
 
-The odds of high alcohol use are about 2.74 higher for male compared to female. The p-value(4.75e-05) suggests that this effect is statistically significant. The variable G3 is not a significant predictor of high alcohol use in this model as the p-value is 0.24 \> 0.05. An increase in the number of failures and absences is associated with a statistically significant increase in alcohol use. For each additional failure, the odds of high alcohol use increase by about 66% (odds ration = 1.66), for each additional absence, the odds of high alcohol use increase by about 10% (odds ration = 1.10).
+The odds of high alcohol use are about 2.74 higher for male compared to female. The p-value(4.75e-05) suggests that this effect is statistically significant. The variable G3 is not a significant predictor of high alcohol use in this model as the p-value is 0.24 > 0.05. An increase in the number of failures and absences is associated with a statistically significant increase in alcohol use. For each additional failure, the odds of high alcohol use increase by about 66% (odds ration = 1.66), for each additional absence, the odds of high alcohol use increase by about 10% (odds ration = 1.10).
 
 The 95% confidence intervals for the odds rations are (1.684, 4.44) for sex, (0.882, 1.031) for G3, (1.074, 2.551) for failures, and (1.047, 1.145) for absences. The interval of G3 variable includes 1, presenting that the odds ratio is not statistically significant at the chosen level of confidence. Therefore, the variable G3 does not fit this model, the H2 is not supported, and other hypothesis are supported. Which means that sex, failure and absence fit this model.
 
