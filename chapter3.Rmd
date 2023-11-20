@@ -1,0 +1,317 @@
+---
+---
+---
+
+# 3: Logistic regression
+
+-   Describe your work and results clearly.
+-   Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
+-   Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+
+## Read data and describe data briefly
+
+```{r}
+
+# read data
+alc <- read.csv("D:\\做一个合格的博士\\Courses\\Open Data\\IODS-project\\data\\alc.csv")
+
+# check data
+library(dplyr)
+glimpse(alc)
+
+```
+
+The data set has 370 observations and 37 variables. The names of variables are listed in the first column in the output. The types of data in this data set are character, integer, numeric, and logic.
+
+## Choose 4 variables and present hypothesis
+
+"sex", "G3", "failures", and "absences" variables are chose. The hypothesis are: 1. There might be gender differences in alcoholic consumption, with male more likely to have high alcohol consumption compared to women. 2. There might be a negative correlation between alcohol consumption and final year grades. 3. Students who have a history of academic failures (higher values) might be more prone to high alcohol consumption. 4.Higher rates of school absences may be associated with high alcoholic consumption.
+
+## Distribution of chosen variables and their relationships with alcoholic consumption
+
+### sex and alcohol consumption
+
+```{r}
+library(dplyr)
+math <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/student-mat.csv", sep=";", header=TRUE)
+por <- read.table("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/student-por.csv", sep=";", header=TRUE)
+free_cols <- c("failures","paid","absences","G1","G2","G3")
+join_cols <- setdiff(colnames(por), free_cols)
+math_por <- inner_join(math, por, by = join_cols, suffix = c(".math", ".por"))
+alc <- select(math_por, all_of(join_cols))
+for(col_name in free_cols) {
+  two_cols <- select(math_por, starts_with(col_name))
+  first_col <- select(two_cols, 1)[[1]]
+  if(is.numeric(first_col)) {
+    alc[col_name] <- round(rowMeans(two_cols))
+  } else {
+    alc[col_name] <- first_col
+  }
+}
+library(ggplot2)
+
+# define a new column alc_use by combining weekday and weekend alcohol use
+alc <- mutate(alc, alc_use = (Dalc + Walc) / 2)
+
+# initialize a plot of alcohol use
+g1 <- ggplot(data = alc, aes(x = alc_use), position = "dodge", stat = "count")
+
+# define the plot as a bar plot and draw it
+g1 + geom_bar(aes(fill = sex))
+
+# define a new logical column 'high_use'
+alc <- mutate(alc, high_use = alc_use > 2)
+
+# initialize a plot of 'high_use'
+g2 <- ggplot(data = alc, aes(x = high_use))
+
+# draw a bar plot of high_use by sex
+g2 + geom_bar(aes(fill = sex), position = "dodge", stat = "count") + facet_wrap(~sex)
+
+```
+
+### box plots of other varibales and alcohoc consumption
+
+```{r}
+
+# initialize a plot of high_use and G3
+g1 <- ggplot(alc, aes(x = high_use, y = G3, col =sex))
+
+# define the plot as a boxplot and draw it
+g1 + geom_boxplot() + ylab("grade") + ggtitle("Student final year grade by alcohol consumption and sex")
+
+# initialize a plot of high_use and absences
+g2 <- ggplot(alc, aes(x= high_use, y= absences, col = sex))
+
+# define the plot as a box plot and draw it
+g2 + geom_boxplot() + ylab("absences") + ggtitle("Student absences by alcohol consumption and sex")
+
+# initialize a plot of high_use and failures
+g3 <- ggplot (alc, aes(x = high_use, y = failures, col = sex))
+
+# define the plot as a box plot and draw it
+g3 + geom_boxplot() + ylab("failues") + ggtitle("Student failures by alcohol consumption and sex")
+
+```
+
+It seems that male are more likely to have high alcohol consumption than female. The results support my hypothesis 1 on the relationship between sex and alcohol use.The student final year grade by alcohol consumption and sex plot shows that higher G3 indicates lower use of alcohol, which supports the hypothesis 2. The plot, absences vs high_use, shows that higher absences relates to higher alcohol consumption, which supports the hypothesis 4. It seems that failures doesn't have a relationship with alcohol consumption.
+
+## Logistic regression
+
+```{r}
+
+# create logic regression
+high_use_four <- glm(high_use ~ sex + G3 + failures + absences, data = alc, family = "binomial")
+
+
+# print out the coefficients of the model
+coef(high_use_four)
+
+# summary of model
+summary(high_use_four)
+
+# extract odds rations and confidence intervals
+OR <- coef(high_use_four) %>% exp
+CI <- confint(high_use_four) %>% exp
+
+```
+
+The odds of high alcohol use are about 2.74 higher for male compared to female. The p-value(4.75e-05) suggests that this effect is statistically significant. The variable G3 is not a significant predictor of high alcohol use in this model as the p-value is 0.24 \> 0.05. An increase in the number of failures and absences is associated with a statistically significant increase in alcohol use. For each additional failure, the odds of high alcohol use increase by about 66% (odds ration = 1.66), for each additional absence, the odds of high alcohol use increase by about 10% (odds ration = 1.10).
+
+The 95% confidence intervals for the odds rations are (1.684, 4.44) for sex, (0.882, 1.031) for G3, (1.074, 2.551) for failures, and (1.047, 1.145) for absences. The interval of G3 variable includes 1, presenting that the odds ratio is not statistically significant at the chosen level of confidence. Therefore, the variable G3 does not fit this model, the H2 is not supported, and other hypothesis are supported. Which means that sex, failure and absence fit this model.
+
+## Explore the predictive power of model
+
+```{r}
+# fit the model
+m <- glm(high_use ~ failures + absences + sex, data = alc, family = "binomial")
+
+# predict() the probability of high_use
+probabilities <- predict(m, type = "response")
+
+library(dplyr)
+# add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability > 0.5)
+
+# see the last ten original classes, predicted probabilities, and class predictions
+select(alc, failures, absences, sex, high_use, probability, prediction) %>% tail(10)
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction)
+
+# access ggplot2
+library(ggplot2)
+
+# initialize a plot of 'high_use' versus 'probability' in 'alc'
+g <- ggplot(alc, aes(x = probability, y = high_use))
+
+# define the geom as points and draw the plot
+g + geom_point(aes(col = prediction))
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction) %>%
+  prop.table() %>%
+  addmargins()
+
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = 0)
+
+# adjust the code
+loss_func(class = alc$high_use, prob = 1)
+
+# adjust the code
+loss_func(class = alc$high_use, prob = alc$probability)
+
+
+```
+
+The overall accuracy of the model is about 77.03%. Among the instances where the actual value is FALSE, the model incorrectly predicted TRUE in about 21.08% of cases;Among the instances where the actual value is TRUE, the model incorrectly predicted FALSE in about 1.89%; the model correctly predicted TRUE in about 8.92%; The model correctly predicted FALSE in about 68.11%. Training error is about 22.97%.
+
+## 10-fold cross-validation
+
+```{r}
+library(readr)
+library(dplyr)
+m <- glm(high_use ~ sex + failures + absences, data = alc, family = "binomial")
+alc <- mutate(alc, probability = predict(m, type = "response"))
+alc <- mutate(alc, prediction = probability > 0.5)
+
+# define a loss function (average prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# compute the average number of wrong predictions in the (training) data
+train_error <- loss_func(class = alc$high_use, prob = alc$probability)
+
+
+# 10-fold cross-validation
+library(boot)
+cv_10_fold <- cv.glm(data = alc, cost = loss_func, glmfit = m, K = 10)
+
+# average number of wrong predictions in the cross validation
+cv_10_fold$delta[1]
+
+```
+
+The model have smaller prediction error, which is about 0.25 error, using 10-fold cross-validation compared to the model introduced in the Exercise Set (0.26 error).
+
+## Delete "sex" of the model
+
+```{r}
+# fit the model
+m <- glm(high_use ~ failures + absences, data = alc, family = "binomial")
+
+# predict() the probability of high_use
+probabilities <- predict(m, type = "response")
+
+library(dplyr)
+# add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability > 0.5)
+
+# see the last ten original classes, predicted probabilities, and class predictions
+select(alc, failures, absences, high_use, probability, prediction) %>% tail(10)
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction)
+
+# access ggplot2
+library(ggplot2)
+
+# initialize a plot of 'high_use' versus 'probability' in 'alc'
+g <- ggplot(alc, aes(x = probability, y = high_use))
+
+# define the geom as points and draw the plot
+g + geom_point(aes(col = prediction))
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction) %>%
+  prop.table() %>%
+  addmargins()
+
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = 0)
+
+# adjust the code
+loss_func(class = alc$high_use, prob = 1)
+
+# adjust the code
+loss_func(class = alc$high_use, prob = alc$probability)
+
+```
+
+The overall accuracy of this model is about 71.35%, training errors is about 28.65%, higher than original model.
+
+## Delete failures of the model
+
+```{r}
+# fit the model
+m <- glm(high_use ~ absences, data = alc, family = "binomial")
+
+# predict() the probability of high_use
+probabilities <- predict(m, type = "response")
+
+library(dplyr)
+# add the predicted probabilities to 'alc'
+alc <- mutate(alc, probability = probabilities)
+
+# use the probabilities to make a prediction of high_use
+alc <- mutate(alc, prediction = probability > 0.5)
+
+# see the last ten original classes, predicted probabilities, and class predictions
+select(alc, absences, high_use, probability, prediction) %>% tail(10)
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction)
+
+# access ggplot2
+library(ggplot2)
+
+# initialize a plot of 'high_use' versus 'probability' in 'alc'
+g <- ggplot(alc, aes(x = probability, y = high_use))
+
+# define the geom as points and draw the plot
+g + geom_point(aes(col = prediction))
+
+# tabulate the target variable versus the predictions
+table(high_use = alc$high_use, prediction = alc$prediction) %>%
+  prop.table() %>%
+  addmargins()
+
+# define a loss function (mean prediction error)
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+# call loss_func to compute the average number of wrong predictions in the (training) data
+loss_func(class = alc$high_use, prob = 0)
+
+# adjust the code
+loss_func(class = alc$high_use, prob = 1)
+
+# adjust the code
+loss_func(class = alc$high_use, prob = alc$probability)
+
+```
+
+The training error of the adjusted model is about 28.92%, the overall accuracy is about 72.08%. As predictors reduces, the prediction accuracy decreases.
