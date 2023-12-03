@@ -1,0 +1,120 @@
+---
+---
+---
+
+# 5:Dimensionality reduction techniques
+
+-   Describe your work and results clearly.
+-   Assume the reader has an introductory course level understanding of writing and reading R code as well as statistical methods.
+-   Assume the reader has no previous knowledge of your data or the more advanced methods you are using.
+
+## Task 1
+### Move the country names to rownames
+```{r}
+library(dplyr)
+library(readr)
+human <- read_csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/human2.csv")
+library(tibble)
+human_ <- column_to_rownames(human, "Country")
+```
+
+
+### Graphic overview of data and summary of data
+```{r}
+# Access GGally
+library(GGally)
+
+# visualize the 'human_' variables
+ggpairs(human_, progress = FALSE)
+
+# Access corrplot
+library(corrplot)
+
+# compute the correlation matrix and visualize it with corrplot
+human_ %>% cor() %>% corrplot()
+```
+The plots show that "Life.exp" and "Mat.Mor", "Edu.Exp" and "Life.Exp", "Ado.Birth" and "Mat.Mor", "Ado.Birth" and "Life.Exp" have strong negative or positive relationships. 
+
+## Task 2 Principal component analysis (without standardized)
+```{r}
+# perform principal component analysis (with the SVD method)
+summary(human_)
+pca_human <- prcomp(human_)
+
+# adjust the code
+biplot(pca_human, choices = 1:2, cex = c(0.8, 1), col = c("grey40", "deeppink2"))
+```
+
+## Task 3 Principal component analysis with standardized data
+```{r}
+# standardize the variables
+human_std <- scale(human_)
+
+# print out summaries of the standardized variables
+summary(human_std)
+# Means are all 0 since the variable are standardized, the standard deviations are scaled to 1.
+
+# perform principal component analysis (with the SVD method)
+pca_human <- prcomp(human_std)
+
+# adjust the code
+biplot(pca_human, choices = 1:2, cex = c(0.8, 1), col = c("grey40", "deeppink2"))
+# The numbers affect the scaling of the labels. 0.8 affects the scaling of the variable labels, 1 affects the scaling of the observation labels.
+```
+The results are quite different with standardized and non-standardized data. There are some zero length arrow in non-standardized PCA except "GNI". This shows no pattern of observations in the raw data. While for standardized data, PCA plot presents that a country with higher Maternal mortality ration and Adolescent birth rate has worse human development, a country with higher GNI, higher proportion of females with at least secondary education, and longer life expectancy at birth develops better based on human development.
+ 
+## Task 4 Interpretations
+The PCA plot presents that a country with higher Maternal mortality ration and Adolescent birth rate has worse human development, a country with higher GNI, higher proportion of females with at least secondary education, and longer life expectancy at birth develops better based on human development. A country with higher proportion of females in labour force and percentage of female representatives in parliament develops better based on human development index.
+
+## Task 5 Tea data
+### Visualize the data
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(ggplot2)
+
+# Load the tea dataset
+tea <- read.csv("https://raw.githubusercontent.com/KimmoVehkalahti/Helsinki-Open-Data-Science/master/datasets/tea.csv", stringsAsFactors = TRUE)
+
+# Convert character variables to factors
+tea[] <- lapply(tea, function(x) if(is.character(x)) as.factor(x) else x)
+
+# View the structure and dimensions of the data
+str(tea)
+dim(tea)
+
+# Use View() to browse the contents of the data
+View(tea)
+
+# column names to keep in the dataset
+keep_columns <- c("Tea", "How", "how", "sugar", "where", "lunch")
+
+# select the 'keep_columns' to create a new dataset
+tea_time <- dplyr::select(tea, one_of(keep_columns))
+
+# visualize the dataset
+library(ggplot2)
+pivot_longer(tea_time, cols = everything()) %>% 
+  ggplot(aes(value)) + geom_bar() + facet_wrap("name", scales = "free") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+```
+People usually drink early grey tea, in the form of tea bag, drink pure tea in chain store, usually not at lunch time. The number of people drink tea with sugar and without sugar are quite close.
+
+### MCA on data
+```{r}
+# multiple correspondence analysis
+library(FactoMineR)
+mca <- MCA(tea_time, graph = FALSE)
+
+# summary of the model
+summary(mca)
+
+# visualize MCA
+plot(mca, invisible=c("ind"), graph.type = "classic", habillage = "quali")
+# The color of factors changes,and the same category factors are in the same color.
+```
+The MCA factor map shows that only about 29.47% of the total inertia of the table is explained. The first dimension accounts for 15.24% and the second dimension for 14.23% of tea drinking habit. The number of people drink tea with sugar and without sugar are quite close. The significant differences of tea drinking habit are where to drink tea, or how to drink tea(tea bag or unpacked tea).
+
+
+
